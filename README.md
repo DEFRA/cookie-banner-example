@@ -119,6 +119,26 @@ When a user rejects analytics (or changes from accept to reject):
 - This catches the case where a user has JavaScript disabled
 - The cookies plugin (`src/plugins/cookies.js`) calls this on every page load when analytics is rejected
 
+### Shared domains and cookies from other services
+
+Services hosted on a shared domain (e.g. `payments.defra.gov.uk` and `grants.defra.gov.uk`) will encounter each other's Google Analytics cookies. There are several things to understand.
+
+**GA cookies from other services will be visible to your service**
+
+GTM sets `_ga` cookies on the broadest useful domain — typically `.defra.gov.uk` rather than `payments.defra.gov.uk` — so the same user is recognised across all services on that domain. This means when a user visits your service, cookies set by a completely different service will appear in `document.cookie` (client-side) and `request.state` (server-side). This is normal and expected; do not treat it as a bug or attempt to filter by service.
+
+**You cannot tell whose cookie it is**
+
+`document.cookie` and `request.state` provide `name=value` pairs with no domain metadata. There is no way to distinguish "my service's `_ga`" from another service's `_ga`. They are identical. This is why the deletion logic sweeps all cookies matching GA prefixes — there is no more targeted approach available.
+
+**Rejecting analytics on your service will delete GA cookies for sibling services**
+
+When `deleteGoogleAnalyticsCookies()` deletes `_ga` on `.defra.gov.uk`, those cookies are gone for every `*.defra.gov.uk` service. If the user then visits another service on the same domain, that service's GA will treat them as a new user and begin a new session. This is the correct GDPR behaviour — the user expressed a preference and it was fully honoured — but teams should be aware of it rather than surprised.
+
+**Server-side removal has a limitation on shared domains**
+
+The client-side `deleteGoogleAnalyticsCookies()` iterates all domain variants and successfully removes cookies wherever they were set. The server-side `h.unstate()` in `removeAnalytics()` only issues `Set-Cookie` expiry headers for the domain of the current request — it cannot reach parent domains. This means for users **without JavaScript**, if GTM set a cookie on `.defra.gov.uk` but the user's request came from `payments.defra.gov.uk`, the server-side unstate will not remove it. The cookie will remain in the browser until the user revisits with JavaScript enabled, or it naturally expires. This is a browser security constraint, not a bug in the implementation.
+
 ### How CSP works with GTM
 
 Content Security Policy is configured in `src/plugins/content-security-policy.js` using [Blankie](https://github.com/nlf/blankie):
