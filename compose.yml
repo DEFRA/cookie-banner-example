@@ -1,0 +1,11 @@
+services:
+  cooker-banner-example:
+    build:
+      context: .
+      target: development
+    volumes:
+      - ./src:/home/node/src
+      - ./package.json:/home/node/package.json
+    environment:
+      # Demo GTM tag — replace with your own for real services
+      GOOGLE_TAG_MANAGER_KEY: ${GOOGLE_TAG_MANAGER_KEY:-GTM-KFK7NV5W}

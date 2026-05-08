@@ -1,0 +1,152 @@
+import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
+import CopyPlugin from 'copy-webpack-plugin'
+import { CleanWebpackPlugin } from 'clean-webpack-plugin'
+import TerserPlugin from 'terser-webpack-plugin'
+import { WebpackAssetsManifest } from 'webpack-assets-manifest'
+import * as sass from 'sass'
+
+const { NODE_ENV = 'development' } = process.env
+
+const require = createRequire(import.meta.url)
+const dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// Locate the installed govuk-frontend package so we can copy its assets
+// (fonts, images) and include its Sass source paths.
+const govukFrontendPath = path.dirname(
+  require.resolve('govuk-frontend/package.json')
+)
+
+const ruleTypeAssetResource = 'asset/resource'
+
+export default {
+  context: path.resolve(dirname, 'src/client'),
+  entry: {
+    application: {
+      import: ['./javascripts/application.js', './stylesheets/application.scss']
+    }
+  },
+  experiments: {
+    outputModule: true
+  },
+  mode: NODE_ENV === 'production' ? 'production' : 'development',
+  devtool: NODE_ENV === 'production' ? 'source-map' : 'inline-source-map',
+  watchOptions: {
+    aggregateTimeout: 200,
+    poll: 1000
+  },
+  output: {
+    filename:
+      NODE_ENV === 'production'
+        ? 'javascripts/[name].[contenthash:7].min.js'
+        : 'javascripts/[name].js',
+    chunkFilename:
+      NODE_ENV === 'production'
+        ? 'javascripts/[name].[chunkhash:7].min.js'
+        : 'javascripts/[name].js',
+    path: path.join(dirname, '.public'),
+    publicPath: '/public/',
+    libraryTarget: 'module',
+    module: true
+  },
+  resolve: {
+    alias: {
+      '/public/assets': path.join(govukFrontendPath, 'dist/govuk/assets')
+    }
+  },
+  module: {
+    rules: [
+      {
+        test: /\.(js|mjs|scss)$/,
+        loader: 'source-map-loader',
+        enforce: 'pre'
+      },
+      {
+        test: /\.scss$/,
+        type: ruleTypeAssetResource,
+        generator: {
+          binary: false,
+          filename:
+            NODE_ENV === 'production'
+              ? 'stylesheets/[name].[contenthash:7].min.css'
+              : 'stylesheets/[name].css'
+        },
+        use: [
+          'postcss-loader',
+          {
+            loader: 'sass-loader',
+            options: {
+              implementation: sass,
+              sassOptions: {
+                loadPaths: [
+                  path.join(dirname, 'src/client/stylesheets')
+                ],
+                quietDeps: true,
+                sourceMapIncludeSources: true,
+                style: 'expanded'
+              },
+              warnRuleAsWarning: true
+            }
+          }
+        ]
+      },
+      {
+        test: /\.(png|svg|jpe?g|gif)$/,
+        type: ruleTypeAssetResource,
+        generator: {
+          filename: 'assets/images/[name][ext]'
+        }
+      },
+      {
+        test: /\.(ico)$/,
+        type: ruleTypeAssetResource,
+        generator: {
+          filename: 'assets/images/[name][ext]'
+        }
+      },
+      {
+        test: /\.(woff|woff2|eot|ttf|otf)$/,
+        type: ruleTypeAssetResource,
+        generator: {
+          filename: 'assets/fonts/[name][ext]'
+        }
+      }
+    ]
+  },
+  optimization: {
+    minimize: NODE_ENV === 'production',
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          compress: { passes: 2 },
+          format: { comments: false },
+          sourceMap: { includeSources: true },
+          safari10: true
+        }
+      })
+    ],
+    providedExports: true,
+    sideEffects: true,
+    usedExports: true
+  },
+  plugins: [
+    new CleanWebpackPlugin(),
+    new WebpackAssetsManifest(),
+    // Copy GOV.UK Frontend static assets (fonts, images, etc.) into .public/assets
+    new CopyPlugin({
+      patterns: [
+        {
+          from: path.join(govukFrontendPath, 'dist/govuk/assets'),
+          to: 'assets'
+        }
+      ]
+    })
+  ],
+  stats: {
+    errorDetails: true,
+    loggingDebug: ['sass-loader'],
+    preset: 'minimal'
+  },
+  target: 'web'
+}

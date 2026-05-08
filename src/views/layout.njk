@@ -1,0 +1,92 @@
+{#
+  Main layout template — extends the GOV.UK Frontend base template.
+
+  This is where the cookie banner, GTM scripts, and application JS
+  are wired together. The conditional logic here is critical:
+
+  COOKIE BANNER (bodyStart block):
+    Only shown when cookiesPolicy.confirmed is false — i.e. the user
+    has not yet made a choice about analytics cookies.
+
+  GTM SCRIPTS (bodyStart block):
+    Only rendered when cookiesPolicy.analytics is true — i.e. the user
+    has explicitly accepted analytics cookies. This ensures no tracking
+    code runs until consent is given.
+
+    Two GTM includes are needed:
+    - head-content.njk: the main GTM JavaScript snippet
+    - body-content.njk: a <noscript> iframe fallback
+
+    Both are placed in bodyStart (not head) because the GOV.UK template
+    doesn't provide a separate head block for scripts. The GTM snippet
+    still works correctly here because it loads asynchronously.
+
+  APPLICATION JS (bodyEnd block):
+    The bundled application.js is loaded with type="module" and a CSP
+    nonce. The nonce attribute must match the one Blankie generated for
+    this response — without it, CSP would block the script.
+#}
+
+{% extends "govuk/template.njk" %}
+
+{% block pageTitle %}
+  {% if pageTitle %}
+    {{ pageTitle }} | {{ serviceName }}
+  {% else %}
+    {{ serviceName }}
+  {% endif %}
+{% endblock %}
+
+{% block head %}
+  <link href="{{ getAssetPath('stylesheets/application.scss') }}" rel="stylesheet">
+{% endblock %}
+
+{% block bodyStart %}
+  {# Show banner only if user hasn't made a choice yet #}
+  {% if not cookiesPolicy.confirmed %}
+    {% include "./cookies/banner.njk" %}
+  {% endif %}
+
+  {# Only load GTM when user has accepted analytics cookies #}
+  {% if cookiesPolicy.analytics %}
+    {% include "./google-tag-manager/head-content.njk" %}
+  {% endif %}
+
+  {% if cookiesPolicy.analytics %}
+    {% include "./google-tag-manager/body-content.njk" %}
+  {% endif %}
+{% endblock %}
+
+{#
+  No custom header block needed.
+  govuk/template.njk automatically renders govukHeader() (GOV.UK logo)
+  followed by govukServiceNavigation({ serviceName, serviceUrl }) when
+  serviceName is set in the template context. This is the correct pattern
+  as of GOV.UK Frontend v6 — the service name goes in the Service navigation
+  component, not inside the GOV.UK header.
+#}
+
+{% block footer %}
+  <footer class="govuk-footer">
+    <div class="govuk-width-container">
+      <div class="govuk-footer__meta">
+        <div class="govuk-footer__meta-item govuk-footer__meta-item--grow">
+          <h2 class="govuk-visually-hidden">Support links</h2>
+          <ul class="govuk-footer__inline-list">
+            <li class="govuk-footer__inline-list-item">
+              <a class="govuk-footer__link" href="/cookies">
+                Cookies
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+{% endblock %}
+
+{% block bodyEnd %}
+  {# nonce attribute is required for CSP — only scripts with a matching
+     nonce will execute. Blankie generates a fresh nonce per response. #}
+  <script type="module" nonce="{{ nonce }}" src="{{ getAssetPath('application.js') }}"></script>
+{% endblock %}

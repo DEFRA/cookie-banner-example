@@ -1,0 +1,43 @@
+{#
+  Home page — the single content page of this demo service.
+
+  This page demonstrates that the cookie banner, GTM integration,
+  and CSP all work together correctly. The actual page content is
+  deliberately simple — the focus is on the cookie infrastructure.
+#}
+
+{% extends "layout.njk" %}
+
+{% block content %}
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <h1 class="govuk-heading-l">{{ pageTitle }}</h1>
+
+      <p class="govuk-body">This is a demo service showing how to implement the <a class="govuk-link" href="https://design-system.service.gov.uk/components/cookie-banner/">GOV.UK Design System cookie banner</a> with Google Tag Manager in a Hapi.js application.</p>
+
+      <h2 class="govuk-heading-m">What this demo covers</h2>
+
+      <ul class="govuk-list govuk-list--bullet">
+        <li>Cookie banner that works without JavaScript (progressive enhancement)</li>
+        <li>Immediately setting Google Analytics cookies when the user accepts</li>
+        <li>Removing all Google Analytics cookies when the user rejects (both from the banner and the cookie preferences page)</li>
+        <li>Content Security Policy (CSP) that allows Google Tag Manager to function</li>
+        <li>CSRF protection on cookie consent forms</li>
+        <li>Server-side cookie removal for users without JavaScript</li>
+      </ul>
+
+      <h2 class="govuk-heading-m">Try it out</h2>
+
+      <p class="govuk-body">You should see a cookie banner at the top of this page. Try:</p>
+
+      <ol class="govuk-list govuk-list--number">
+        <li>Accepting analytics cookies — check your browser's developer tools to see GA cookies appear</li>
+        <li>Going to the <a class="govuk-link" href="/cookies">cookie preferences page</a> and changing your choice</li>
+        <li>Disabling JavaScript and testing the banner still works via form submission</li>
+        <li>Inspecting the CSP headers in the network tab</li>
+      </ol>
+
+      <p class="govuk-body">See the <a class="govuk-link" href="https://github.com/DEFRA/cooker-banner-example">README</a> for a full explanation of how each piece works and how to adapt it for your own service.</p>
+    </div>
+  </div>
+{% endblock %}

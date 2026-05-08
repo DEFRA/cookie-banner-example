@@ -1,0 +1,8 @@
+// Minimal stylesheet — just imports the GOV.UK Frontend styles.
+// This gives you the full Design System look and feel (typography,
+// colours, spacing, components) with a single import.
+//
+// Webpack processes this through sass-loader (compiles SCSS to CSS)
+// and postcss-loader (adds vendor prefixes and minifies).
+
+@use "govuk-frontend";

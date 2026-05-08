@@ -1,0 +1,10 @@
+services:
+  cooker-banner-example:
+    build:
+      target: development
+    command: npm test
+    environment:
+      GOOGLE_TAG_MANAGER_KEY: GTM-KFK7NV5W
+    volumes:
+      - ./test:/home/node/test
+      - ./coverage:/home/node/coverage

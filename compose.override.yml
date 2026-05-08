@@ -1,0 +1,4 @@
+services:
+  cooker-banner-example:
+    ports:
+      - '3000:3000'
