@@ -65,7 +65,7 @@ const config = convict({
   staticCacheTimeout: {
     doc: 'Cache timeout for static assets (ms)',
     format: 'nat',
-    default: 15 * 60 * 1000
+    default: isProduction ? 15 * 60 * 1000 : 0
   },
   nunjucks: {
     watch: {

@@ -5,4 +5,6 @@
 // Webpack processes this through sass-loader (compiles SCSS to CSS)
 // and postcss-loader (adds vendor prefixes and minifies).
 
-@use "govuk-frontend";
+@use "govuk-frontend" with (
+  $govuk-assets-path: '/public/assets/'
+);
