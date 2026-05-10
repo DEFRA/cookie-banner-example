@@ -49,7 +49,7 @@ describe('Home route', () => {
   test('has data attributes for JS enhancement', () => {
     const container = $('.js-cookies-container')
     expect(container.data('crumb')).toBeTruthy()
-    expect(container.data('return-url')).toBeDefined()
+    expect(container.data('gtm-key')).toBeDefined()
   })
 
   test('does not include GTM scripts when analytics not accepted', () => {
@@ -69,5 +69,25 @@ describe('Home route', () => {
       footerLinks.push($(el).attr('href'))
     })
     expect(footerLinks).toContain('/cookies')
+  })
+
+  test('does not expire GA cookies on first visit before user has made a choice', async () => {
+    // Simulates a first visit where the browser carries GA cookies from a
+    // sibling service on the same domain. The server must NOT send Set-Cookie
+    // expiry headers for those cookies until the user explicitly rejects.
+    const firstVisit = await server.inject({
+      method: 'GET',
+      url: '/',
+      headers: {
+        cookie: '_ga=GA1.1.123456789.1234567890; _gid=GA1.1.987654321.1234567890'
+      }
+    })
+
+    const setCookieHeaders = [firstVisit.headers['set-cookie']].flat().filter(Boolean)
+    const expiresGa = setCookieHeaders.some(
+      (h) => (h.startsWith('_ga') || h.startsWith('_gid')) && h.includes('expires=Thu, 01 Jan 1970')
+    )
+
+    expect(expiresGa).toBe(false)
   })
 })

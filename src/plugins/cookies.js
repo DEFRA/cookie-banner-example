@@ -53,7 +53,11 @@ export const cookies = {
 
           // Server-side removal of GA cookies when analytics is rejected.
           // This is essential for users without JavaScript.
-          if ((!cookiesPolicy.analytics)) {
+          // Only remove when the user has explicitly confirmed their preference —
+          // on first visit (confirmed: false) the user has not yet made a choice,
+          // so we must not delete GA cookies that may have been set by sibling
+          // services on a shared domain where the user DID consent.
+          if (cookiesPolicy.confirmed && !cookiesPolicy.analytics) {
             removeAnalytics(request, h)
           }
         }

@@ -1,5 +1,5 @@
 {
-  "name": "cooker-banner-example",
+  "name": "cookie-banner-example",
   "version": "0.0.0",
   "description": "Demo service showing how to implement GOV.UK Design System cookie banner with Google Tag Manager in Hapi.js",
   "sideEffects": false,
@@ -13,7 +13,7 @@
     "dev": "npm run frontend:watch & npm run server:watch wait",
     "docker:build": "docker compose build",
     "docker:dev": "docker compose up",
-    "docker:test": "npm run lint && mkdir -p coverage 2>/dev/null || true && docker compose -p cooker-banner-example-test down -v && docker compose -f compose.yml -f compose.test.yml -p cooker-banner-example-test run --build --rm cooker-banner-example",
+    "docker:test": "npm run lint && mkdir -p coverage 2>/dev/null || true && docker compose -p cookie-banner-example-test down -v && docker compose -f compose.yml -f compose.test.yml -p cookie-banner-example-test run --build --rm cookie-banner-example",
     "frontend:watch": "NODE_ENV=development webpack --watch",
     "lint": "eslint",
     "lint:fix": "eslint --fix",

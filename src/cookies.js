@@ -59,10 +59,11 @@ function updatePolicy (request, h, analytics) {
 function removeAnalytics (request, h) {
   // Match all Google Analytics cookie name patterns.
   // h.unstate() tells Hapi to send Set-Cookie headers that expire them.
-  const googleCookiesRegex = /^_ga$|^_ga_*$|^_gid$|^_ga_.*$|^_gat_.*$/g
+  // Prefixes: _ga (base), _ga_* (GA4 stream), _gid (daily), _gat_* (throttle), _dc_gtm_* (GTM)
+  const googleCookiesRegex = /^_ga$|^_ga_.*$|^_gid$|^_gat_.*$|^_dc_gtm_.*$/
 
   for (const cookieName of Object.keys(request.state)) {
-    if (cookieName.search(googleCookiesRegex) === 0) {
+    if (googleCookiesRegex.test(cookieName)) {
       h.unstate(cookieName)
     }
   }

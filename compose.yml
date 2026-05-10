@@ -1,5 +1,5 @@
 services:
-  cooker-banner-example:
+  cookie-banner-example:
     build:
       context: .
       target: development

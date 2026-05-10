@@ -243,4 +243,48 @@ describe('Cookies route', () => {
     expect($('.js-cookies-button-accept').text()).toContain('Accept analytics cookies')
     expect($('.js-cookies-button-reject').text()).toContain('Reject analytics cookies')
   })
+
+  test('POST /cookies without analytics field returns 400', async () => {
+    // analytics is required — omitting it must be rejected so the server never
+    // records an ambiguous confirmed:true / analytics:undefined state.
+    const getResponse = await server.inject({ method: 'GET', url: '/cookies' })
+    const $ = cheerio.load(getResponse.payload)
+    const cookies = getResponse.headers['set-cookie']
+    const crumb = $('input[name="crumb"]').val()
+
+    const result = await server.inject({
+      method: 'POST',
+      url: '/cookies',
+      headers: {
+        cookie: cookies ? cookies.join(';') : ''
+      },
+      payload: {
+        async: false,
+        crumb
+        // analytics intentionally omitted
+      }
+    })
+
+    expect(result.statusCode).toBe(400)
+  })
+
+  test('does not expire GA cookies on first visit before user has made a choice', async () => {
+    // On first visit the consent cookie is absent — confirmed is false.
+    // The server must not send Set-Cookie expiry headers for GA cookies
+    // until the user explicitly rejects analytics.
+    const firstVisit = await server.inject({
+      method: 'GET',
+      url: '/cookies',
+      headers: {
+        cookie: '_ga=GA1.1.123456789.1234567890; _gid=GA1.1.987654321.1234567890'
+      }
+    })
+
+    const setCookieHeaders = [firstVisit.headers['set-cookie']].flat().filter(Boolean)
+    const expiresGa = setCookieHeaders.some(
+      (h) => (h.startsWith('_ga') || h.startsWith('_gid')) && h.includes('expires=Thu, 01 Jan 1970')
+    )
+
+    expect(expiresGa).toBe(false)
+  })
 })

@@ -1,6 +1,6 @@
 import { describe, beforeEach, afterEach, test, expect, vi } from 'vitest'
 import { config } from '../../src/config/config.js'
-import { getCurrentPolicy, updatePolicy } from '../../src/cookies.js'
+import { getCurrentPolicy, updatePolicy, removeAnalytics } from '../../src/cookies.js'
 
 describe('cookies', () => {
   const cookieNamePolicy = config.get('cookie.name')
@@ -173,5 +173,31 @@ describe('cookies', () => {
     updatePolicy(request, h, true)
 
     expect(h.unstate).not.toHaveBeenCalled()
+  })
+
+  test('removeAnalytics expires _dc_gtm_ cookies', () => {
+    request.state._dc_gtm_UA123456 = 'abc'
+
+    removeAnalytics(request, h)
+
+    expect(h.unstate).toHaveBeenCalledWith('_dc_gtm_UA123456')
+  })
+
+  test('removeAnalytics expires _ga_ stream cookies', () => {
+    request.state['_ga_ABCDEF1234'] = 'abc'
+
+    removeAnalytics(request, h)
+
+    expect(h.unstate).toHaveBeenCalledWith('_ga_ABCDEF1234')
+  })
+
+  test('removeAnalytics does not expire non-GA cookies', () => {
+    request.state.session = 'xyz'
+    request.state[cookieNamePolicy] = { confirmed: true, essential: true, analytics: false }
+
+    removeAnalytics(request, h)
+
+    expect(h.unstate).not.toHaveBeenCalledWith('session')
+    expect(h.unstate).not.toHaveBeenCalledWith(cookieNamePolicy)
   })
 })

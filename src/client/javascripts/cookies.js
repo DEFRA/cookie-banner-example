@@ -148,20 +148,36 @@ export default {
     // Read server-generated values from data attributes
     const crumb = cookieContainer.dataset.crumb
     const gtmKey = cookieContainer.dataset.gtmKey
-    const returnUrl = cookieContainer.dataset.returnUrl
-
-    // Reuse the same safe redirect check as the server
-    const isSafeRedirect = (url) => typeof url === 'string' && url.startsWith('/') && !url.startsWith('//')
 
     // Send the consent choice to the server via XHR.
     // The crumb (CSRF token) is sent in the JSON body.
     // @hapi/crumb accepts it there for JSON content-type requests.
+    //
+    // On a 2xx response, onSuccess is called.
+    // On any non-2xx or network error, the page form is submitted natively
+    // as a fallback so the consent is never silently lost.
+    const formElement = cookieContainer.closest('form')
+
     const submitPreference = (accepted, onSuccess) => {
       const xhr = new XMLHttpRequest() // eslint-disable-line no-undef
 
       xhr.open('POST', '/cookies', true)
       xhr.setRequestHeader('Content-Type', 'application/json')
-      xhr.onload = onSuccess
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          onSuccess()
+        } else {
+          // Server rejected the request (e.g. stale CSRF token) — fall back
+          // to a native form POST so the consent is not silently lost.
+          formElement?.submit()
+        }
+      }
+
+      xhr.onerror = () => {
+        // Network failure — fall back to native form POST.
+        formElement?.submit()
+      }
 
       xhr.send(JSON.stringify({
         analytics: accepted,
@@ -184,28 +200,25 @@ export default {
       })
     }
 
-    // ACCEPT: Show confirmation, load GTM immediately, persist choice
+    // ACCEPT: Show confirmation, load GTM immediately, persist choice.
+    // No redirect after XHR — the cookie is persisted server-side.
+    // The next natural page navigation will render GTM from the server,
+    // avoiding a duplicate page_view from loading GTM twice on the same page.
     acceptButton?.addEventListener('click', (event) => {
       event.preventDefault()
       showBanner(acceptedBanner)
       loadGoogleAnalytics(gtmKey)
-      submitPreference(true, () => {
-        if (isSafeRedirect(returnUrl)) {
-          globalThis.location.assign(returnUrl)
-        }
-      })
+      submitPreference(true, () => {})
     })
 
-    // REJECT: Show confirmation, delete GA cookies immediately, persist choice
+    // REJECT: Show confirmation, delete GA cookies immediately, persist choice.
+    // No redirect — the confirmation banner stays visible and GA cookies are
+    // already deleted client-side. Server-side deletion happens on next load.
     rejectButton?.addEventListener('click', (event) => {
       event.preventDefault()
       showBanner(rejectedBanner)
       deleteGoogleAnalyticsCookies()
-      submitPreference(false, () => {
-        if (isSafeRedirect(returnUrl)) {
-          globalThis.location.assign(returnUrl)
-        }
-      })
+      submitPreference(false, () => {})
     })
 
     // "Hide this message" buttons on the confirmation banners

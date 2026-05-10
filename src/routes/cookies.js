@@ -64,7 +64,7 @@ export const cookies = [
     options: {
       validate: {
         payload: {
-          analytics: Joi.boolean(),
+          analytics: Joi.boolean().required(),
           async: Joi.boolean().default(false),
           referer: Joi.string().allow(''),
           returnUrl: Joi.string().allow('').max(2000).optional()

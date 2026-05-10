@@ -12,22 +12,25 @@
   HOW IT WORKS WITH JAVASCRIPT (enhanced experience):
     The client-side cookies.js script intercepts the button clicks,
     prevents the default form submission, and instead:
-    1. Shows the accepted/rejected confirmation banner
+    1. Shows the accepted/rejected confirmation banner immediately
     2. Immediately loads GTM (on accept) or deletes GA cookies (on reject)
-    3. Sends an async XHR POST to /cookies to persist the choice
-    4. Redirects back to the current page on success
+    3. Sends an async XHR POST to /cookies to persist the choice server-side
+    4. On XHR failure, falls back to a native form POST
+
+    There is intentionally no redirect after the XHR succeeds. The user
+    stays on the current page with the confirmation banner visible. The
+    next natural navigation will render GTM server-side (if accepted),
+    avoiding a duplicate GA page_view from loading GTM twice on the same page.
 
     The data attributes on the banner container pass server-generated
     values to the client-side script:
     - data-crumb: the CSRF token for the XHR POST
     - data-gtm-key: the GTM container ID to load on acceptance
-    - data-return-url: the page to redirect back to
 
   WHY BOTH MODES?
     GOV.UK services must work without JavaScript (WCAG 2.2, progressive
     enhancement). The form-based approach ensures basic functionality.
-    JavaScript enhances the experience with instant feedback and no
-    full-page reload.
+    JavaScript enhances the experience with instant feedback.
 
   CSRF PROTECTION:
     The hidden crumb input is required for the form POST to succeed.
@@ -60,7 +63,6 @@
     attributes: {
       "data-crumb": crumb,
       "data-gtm-key": googleTagManagerKey,
-      "data-return-url": currentPath,
       "data-nosnippet": ""
     },
     messages: [
