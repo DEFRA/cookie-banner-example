@@ -7,7 +7,7 @@
 // The `checked` property on each item is set based on the user's current
 // cookie policy, so the correct radio is pre-selected when the page loads.
 
-export function cookiesModel (updated, referer = '', cookiesPolicy = {}) {
+export function cookiesModel (updated, cookiesPolicy = {}) {
   return {
     analytics: {
       idPrefix: 'analytics',
@@ -31,7 +31,6 @@ export function cookiesModel (updated, referer = '', cookiesPolicy = {}) {
         }
       ]
     },
-    updated,
-    referer
+    updated
   }
 }

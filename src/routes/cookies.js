@@ -5,7 +5,6 @@
 //
 // GET /cookies:
 //   Renders the cookie preferences page showing the user's current choice.
-//   The referer header is captured so the back link works.
 //
 // POST /cookies:
 //   Handles cookie consent submissions. This endpoint supports TWO modes:
@@ -28,7 +27,6 @@
 //   - analytics: must be a boolean
 //   - async: must be a boolean
 //   - returnUrl: max 2000 chars (prevents oversized redirect URLs)
-//   - referer: string for back link on preferences page
 //
 // OPEN REDIRECT PROTECTION:
 //   returnUrl is validated with isSafeRedirect() to ensure it only
@@ -51,7 +49,6 @@ export const cookies = [
           pageTitle: 'Cookies',
           ...cookiesModel(
             false,
-            request.headers.referer,
             request.state[config.get('cookie.name')]
           )
         }
@@ -66,7 +63,6 @@ export const cookies = [
         payload: {
           analytics: Joi.boolean().required(),
           async: Joi.boolean().default(false),
-          referer: Joi.string().allow(''),
           returnUrl: Joi.string().allow('').max(2000).optional()
         }
       }
@@ -93,7 +89,6 @@ export const cookies = [
           pageTitle: 'Cookies',
           ...cookiesModel(
             true,
-            payload.referer,
             request.state[config.get('cookie.name')]
           )
         }
