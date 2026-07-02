@@ -6,10 +6,11 @@
 // KEY VARIABLES:
 //
 // - serviceName: shown in the cookie banner heading and page titles
-// - getAssetPath(): resolves Webpack asset names to their cache-busted
-//   filenames. In production, Webpack outputs files like
-//   application.a1b2c3d.min.js — the manifest maps the original name
-//   to the hashed name so templates don't need to know the hash.
+// - getAssetPath(): resolves logical asset names to their cache-busted
+//   filenames. Vite outputs files like javascripts/application.a1b2c3d.min.js
+//   and records them in .public/assets-manifest.json. The manifest entry for
+//   the client entrypoint carries the JS filename (`file`) and its bundled
+//   stylesheet(s) (`css`), so templates don't need to know the hashes.
 // - googleTagManagerKey: the GTM container ID, used by the cookie banner
 //   template and the GTM script templates to conditionally render
 
@@ -23,17 +24,33 @@ const manifestPath = path.join(
   '.public/assets-manifest.json'
 )
 
-let webpackManifest
+// The Vite entrypoint, keyed by its path relative to the Vite `root` (src/client).
+const entryKey = 'javascripts/application.js'
+
+let viteManifest
+
+function loadManifest () {
+  if (!viteManifest) {
+    try {
+      viteManifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))
+    } catch {
+      // Manifest may not exist during tests or before the first build
+      viteManifest = {}
+    }
+  }
+  return viteManifest
+}
 
 export function context (request) {
   const ctx = request.response.source?.context || {}
 
-  if (!webpackManifest) {
-    try {
-      webpackManifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))
-    } catch {
-      // Manifest may not exist during tests or before first build
-    }
+  const manifest = loadManifest()
+  const entry = manifest[entryKey]
+
+  // Map the logical names used in templates to the hashed Vite outputs.
+  const assets = {
+    'application.js': entry?.file,
+    'stylesheets/application.scss': entry?.css?.[0]
   }
 
   return {
@@ -43,8 +60,8 @@ export function context (request) {
     serviceUrl: '/',
     cookieName: config.get('cookie.name'),
     getAssetPath (asset) {
-      const webpackAssetPath = webpackManifest?.[asset]
-      return `${assetPath}/${webpackAssetPath ?? asset}`
+      const resolved = assets[asset] ?? manifest[asset]?.file ?? asset
+      return `${assetPath}/${resolved}`
     },
     googleTagManagerKey: config.get('googleAnalytics.googleTagManagerKey')
   }
