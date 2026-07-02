@@ -1,11 +1,27 @@
 services:
   cookie-banner-example:
+    profiles:
+      - app
     build:
       context: .
       target: development
+    ports:
+      - '3000:3000'
+      - '9229:9229'
     volumes:
       - ./src:/home/node/src
       - ./package.json:/home/node/package.json
+      - ./vite.config.js:/home/node/vite.config.js
+    env_file:
+      - .env
     environment:
       # Demo GTM tag — replace with your own for real services
       GOOGLE_TAG_MANAGER_KEY: ${GOOGLE_TAG_MANAGER_KEY:-GTM-KFK7NV5W}
+    networks:
+      - cookie-banner-example
+
+networks:
+  cookie-banner-example:
+    driver: bridge
+    name: cookie-banner-example
+

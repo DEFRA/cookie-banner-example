@@ -1,4 +1,0 @@
-services:
-  cookie-banner-example:
-    ports:
-      - '3000:3000'

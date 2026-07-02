@@ -13,6 +13,7 @@
 
 import { initAll } from 'govuk-frontend'
 import cookies from './cookies.js'
+import '../stylesheets/application.scss'
 
 cookies.init()
 
