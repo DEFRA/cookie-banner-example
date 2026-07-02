@@ -12,16 +12,37 @@ This demo solves the common pain points teams encounter:
 
 ## Quick start
 
+### First-time setup
+
 ```bash
-docker compose up
+nvm install && nvm use   # switch to Node 24 (install nvm if needed)
+npm install
+cp .env.example .env
 ```
 
-Visit [http://localhost:3000](http://localhost:3000)
+### Start
+
+```bash
+npm run local
+```
+
+This builds the client assets with Vite then starts the app with hot reload (`node --watch`). Visit [http://localhost:3000](http://localhost:3000)
 
 ### Run tests
 
 ```bash
-npm run docker:test
+npm test
+```
+
+Builds the frontend and runs all tests (unit + integration) with coverage. No containers required — this app has no stateful dependencies.
+
+```bash
+# Watch mode (no build)
+npm run test:watch
+
+# Unit or integration only
+npm run test:unit
+npm run test:integration
 ```
 
 ## Demo GTM tag
@@ -266,11 +287,11 @@ Check the browser console for CSP violation reports. Common causes:
 
 | Technology | Purpose |
 |-----------|---------|
-| [Node.js 22+](https://nodejs.org/) | Runtime with ES module support |
+| [Node.js 24+](https://nodejs.org/) | Runtime with ES module support |
 | [Hapi.js 21](https://hapi.dev/) | HTTP server framework |
 | [Nunjucks](https://mozilla.github.io/nunjucks/) | Server-side template engine |
 | [GOV.UK Frontend 6.x](https://frontend.design-system.service.gov.uk/) | Design System components and styles |
-| [Webpack](https://webpack.js.org/) | Client-side asset bundling |
+| [Vite](https://vite.dev/) | Client-side asset bundling |
 | [@hapi/crumb](https://github.com/hapijs/crumb) | CSRF protection |
 | [Blankie](https://github.com/nlf/blankie) | Content Security Policy |
 | [Convict](https://github.com/mozilla/node-convict) | Configuration management |
