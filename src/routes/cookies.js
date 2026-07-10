@@ -42,13 +42,20 @@ export const cookies = [
   {
     method: 'GET',
     path: '/cookies',
+    options: {
+      validate: {
+        query: {
+          updated: Joi.boolean().default(false)
+        }
+      }
+    },
     handler: function (request, h) {
       return h.view(
         'cookies/policy',
         {
           pageTitle: 'Cookies',
           ...cookiesModel(
-            false,
+            request.query.updated,
             request.state[config.get('cookie.name')]
           )
         }
@@ -82,17 +89,10 @@ export const cookies = [
         return h.redirect(payload.returnUrl)
       }
 
-      // Synchronous mode from preferences page — re-render with success banner
-      return h.view(
-        'cookies/policy',
-        {
-          pageTitle: 'Cookies',
-          ...cookiesModel(
-            true,
-            request.state[config.get('cookie.name')]
-          )
-        }
-      )
+      // Synchronous mode from preferences page — redirect back with ?updated=true
+      // so the browser lands on a GET, preventing the ERR_CACHE_MISS / form
+      // resubmit dialog when the user later clicks Back.
+      return h.redirect('/cookies?updated=true')
     }
   }
 ]

@@ -140,7 +140,7 @@ describe('Cookies route', () => {
     expect(result.headers.location).toBe('/')
   })
 
-  test('POST /cookies with external returnUrl falls through to policy view', async () => {
+  test('POST /cookies with external returnUrl redirects to /cookies?updated=true', async () => {
     const getResponse = await server.inject({ method: 'GET', url: '/cookies' })
     const $ = cheerio.load(getResponse.payload)
     const cookies = getResponse.headers['set-cookie']
@@ -160,11 +160,11 @@ describe('Cookies route', () => {
       }
     })
 
-    expect(result.statusCode).toBe(200)
-    expect(result.request.response.source.template).toBe('cookies/policy')
+    expect(result.statusCode).toBe(302)
+    expect(result.headers.location).toBe('/cookies?updated=true')
   })
 
-  test('POST /cookies with protocol-relative returnUrl falls through to policy view', async () => {
+  test('POST /cookies with protocol-relative returnUrl redirects to /cookies?updated=true', async () => {
     const getResponse = await server.inject({ method: 'GET', url: '/cookies' })
     const $ = cheerio.load(getResponse.payload)
     const cookies = getResponse.headers['set-cookie']
@@ -184,8 +184,8 @@ describe('Cookies route', () => {
       }
     })
 
-    expect(result.statusCode).toBe(200)
-    expect(result.request.response.source.template).toBe('cookies/policy')
+    expect(result.statusCode).toBe(302)
+    expect(result.headers.location).toBe('/cookies?updated=true')
   })
 
   test('POST /cookies with returnUrl exceeding 2000 chars returns 400', async () => {
@@ -211,7 +211,7 @@ describe('Cookies route', () => {
     expect(result.statusCode).toBe(400)
   })
 
-  test('POST /cookies sync without returnUrl renders policy with success banner', async () => {
+  test('POST /cookies sync without returnUrl redirects to /cookies?updated=true', async () => {
     const getResponse = await server.inject({ method: 'GET', url: '/cookies' })
     const $ = cheerio.load(getResponse.payload)
     const cookies = getResponse.headers['set-cookie']
@@ -230,9 +230,16 @@ describe('Cookies route', () => {
       }
     })
 
-    expect(result.statusCode).toBe(200)
-    const $result = cheerio.load(result.payload)
-    expect($result('.govuk-notification-banner--success').length).toBe(1)
+    expect(result.statusCode).toBe(302)
+    expect(result.headers.location).toBe('/cookies?updated=true')
+  })
+
+  test('GET /cookies?updated=true renders policy with success banner', async () => {
+    const response = await server.inject({ method: 'GET', url: '/cookies?updated=true' })
+    const $ = cheerio.load(response.payload)
+
+    expect(response.statusCode).toBe(200)
+    expect($('.govuk-notification-banner--success').length).toBe(1)
   })
 
   test('Cookie banner appears on cookie page when no cookie set', async () => {
@@ -266,6 +273,47 @@ describe('Cookies route', () => {
     })
 
     expect(result.statusCode).toBe(400)
+  })
+
+  test('GET /cookies has Cache-Control: no-store header', async () => {
+    const response = await server.inject({ method: 'GET', url: '/cookies' })
+
+    expect(response.headers['cache-control']).toBe('no-store')
+  })
+
+  test('POST /cookies sync view response has Cache-Control: no-store header', async () => {
+    const getResponse = await server.inject({ method: 'GET', url: '/cookies' })
+    const $ = cheerio.load(getResponse.payload)
+    const cookies = getResponse.headers['set-cookie']
+    const crumb = $('input[name="crumb"]').val()
+
+    // POST redirects (PRG pattern), so check the resulting GET carries no-store
+    const postResult = await server.inject({
+      method: 'POST',
+      url: '/cookies',
+      headers: {
+        cookie: cookies ? cookies.join(';') : ''
+      },
+      payload: {
+        analytics: false,
+        async: false,
+        crumb
+      }
+    })
+
+    expect(postResult.statusCode).toBe(302)
+
+    const getResult = await server.inject({
+      method: 'GET',
+      url: postResult.headers.location,
+      headers: {
+        cookie: postResult.headers['set-cookie']
+          ? [postResult.headers['set-cookie']].flat().join(';')
+          : ''
+      }
+    })
+
+    expect(getResult.headers['cache-control']).toBe('no-store')
   })
 
   test('does not expire GA cookies on first visit before user has made a choice', async () => {
