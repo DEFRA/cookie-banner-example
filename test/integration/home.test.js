@@ -71,6 +71,10 @@ describe('Home route', () => {
     expect(footerLinks).toContain('/cookies')
   })
 
+  test('has Cache-Control: no-store header', () => {
+    expect(response.headers['cache-control']).toBe('no-store')
+  })
+
   test('does not expire GA cookies on first visit before user has made a choice', async () => {
     // Simulates a first visit where the browser carries GA cookies from a
     // sibling service on the same domain. The server must NOT send Set-Cookie
