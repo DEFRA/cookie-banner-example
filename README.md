@@ -7,7 +7,7 @@ This demo solves the common pain points teams encounter:
 - **Immediately setting GA cookies on acceptance** — GTM loads client-side the moment the user accepts, no page reload required for GA to start collecting
 - **Removing all GA cookies when the user rejects** — from both the banner and the cookie preferences page
 - **Working without JavaScript** — progressive enhancement via form submission
-- **Working with Content Security Policy (CSP)** — nonces and domain whitelisting
+- **Working with Content Security Policy (CSP)** — domain and script protection
 - **CSRF protection** — on all cookie consent forms
 
 ## Quick start
